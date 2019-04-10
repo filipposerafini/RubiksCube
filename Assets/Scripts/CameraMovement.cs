@@ -14,7 +14,7 @@ public class CameraMovement : MonoBehaviour
         {
             x += Input.GetAxis("Mouse X") * speed;
             y -= Input.GetAxis("Mouse Y") * speed;
-            y = Mathf.Clamp(y, -90, 90);
+            y = Mathf.Clamp(y, -85, 85);
         }
 
         Quaternion rotation = Quaternion.Euler(0, x, y);

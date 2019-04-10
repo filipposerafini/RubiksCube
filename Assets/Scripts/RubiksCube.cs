@@ -1,112 +1,40 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class RubiksCube : MonoBehaviour
 {
 
     public GameObject CubeletPrefab;
     public int speed = 5;
-    Transform CubeTransform;
     List<GameObject> Cubelets = new List<GameObject>();
-    GameObject CenterCubelet;
-    Transform selectedSide, selectedCubelet;
     List<List<GameObject>> movableSlices = new List<List<GameObject>>();
     List<GameObject> movingSlice = new List<GameObject>();
-    Vector3 rotationVector = new Vector3(0, 0, 0);
+    Vector3 position = Vector3.zero;
+    Vector3 rotation = Vector3.zero;
     
     bool isRotating = false;
     bool isShuffling = false;
     
-    List<GameObject> UpCubelets
-    {
-        get
-        {
-            return Cubelets.FindAll(x => Mathf.Round(x.transform.localPosition.y) == 1);
-        }
-    }
-    
-    List<GameObject> DownCubelets
-    {
-        get
-        {
-            return Cubelets.FindAll(x => Mathf.Round(x.transform.localPosition.y) == -1);
-        }
-    }
-
-    List<GameObject> FrontCubelets
-    {
-        get
-        {
-            return Cubelets.FindAll(x => Mathf.Round(x.transform.localPosition.z) == -1);
-        }
-    }
-    
-    List<GameObject> BackCubelets
-    {
-        get
-        {
-            return Cubelets.FindAll(x => Mathf.Round(x.transform.localPosition.z) == 1);
-        }
-    }
-    
-    List<GameObject> LeftCubelets
-    {
-        get
-        {
-            return Cubelets.FindAll(x => Mathf.Round(x.transform.localPosition.x) == 1);
-        }
-    }
-    
-    List<GameObject> RightCubelets
-    {
-        get
-        {
-            return Cubelets.FindAll(x => Mathf.Round(x.transform.localPosition.x) == -1);
-        }
-    }
-    
-    List<GameObject> MiddleCubelets
-    {
-        get
-        {
-            return Cubelets.FindAll(x => Mathf.Round(x.transform.localPosition.x) == 0);
-        }
-    }
-    
-    List<GameObject> StandingCubelets
-    {
-        get
-        {
-            return Cubelets.FindAll(x => Mathf.Round(x.transform.localPosition.z) == 0);
-        }
-    }
-    
-    List<GameObject> EquatorCubelets
-    {
-        get
-        {
-            return Cubelets.FindAll(x => Mathf.Round(x.transform.localPosition.y) == 0);
-        }
-    }
-    
     Vector3[] RotationVectors = 
     {
-        new Vector3(0, 1, 0), new Vector3(0, 0, 1), new Vector3(1, 0, 0),
-        new Vector3(0, -1, 0), new Vector3(0, 0, -1), new Vector3(-1, 0, 0)
+        Vector3.right, Vector3.up, Vector3.forward,
+        Vector3.left, Vector3.down, Vector3.back
     };
 
     void Start()
     {
-        CubeTransform = transform;
         CreateCube();
     }
     
     void Update()
     {
         if (!isRotating)
+        {
             KeyboardInput();
-        MouseInput();
+            MouseInput();
+        }
     }
     
     void CreateCube()
@@ -115,118 +43,167 @@ public class RubiksCube : MonoBehaviour
             DestroyImmediate(cubelet);
 
         Cubelets.Clear();
+        movableSlices.Clear();
+        movingSlice.Clear();
 
         for (int x = -1; x <= 1; x++)
             for (int y = -1; y <= 1; y++)
                 for (int z = -1; z <= 1; z++)
                 {
-                    GameObject cubelet = Instantiate(CubeletPrefab, CubeTransform, false);
+                    GameObject cubelet = Instantiate(CubeletPrefab, transform, false);
                     cubelet.transform.localPosition = new Vector3(-x, -y, z);
                     cubelet.GetComponent<Cubelet>().SetColor(-x, -y, z);
                     Cubelets.Add(cubelet);
                 }
-        CenterCubelet = Cubelets[13];
+    }
+
+    void FixCube()
+    {
+        foreach (GameObject cubelet in Cubelets)
+        {
+            cubelet.transform.localPosition = new Vector3(
+                    Mathf.Round(cubelet.transform.localPosition.x),
+                    Mathf.Round(cubelet.transform.localPosition.y),
+                    Mathf.Round(cubelet.transform.localPosition.z));
+            cubelet.transform.localRotation = Quaternion.Euler(
+                    Round((int)cubelet.transform.localRotation.eulerAngles.x),
+                    Round((int)cubelet.transform.localRotation.eulerAngles.y),
+                    Round((int)cubelet.transform.localRotation.eulerAngles.z));
+        }
     }
     
+    int Round(int angle)
+    {
+        if (angle % 90 > 45)
+            return angle + (90 - angle % 90);
+        else
+            return angle - angle % 90;
+    }
+
     void KeyboardInput()
     {
-        int direction;
-        if (Input.GetKey(KeyCode.LeftShift))
-            direction = -1;
-        else
-            direction = 1;
-            
         if (Input.GetKeyDown(KeyCode.Return) && !isShuffling)
             StartCoroutine(Shuffle());
         else if (Input.GetKeyDown(KeyCode.Escape) && !isShuffling)
             CreateCube();
-        else if (Input.GetKeyDown(KeyCode.U))
-            StartCoroutine(Rotate(UpCubelets, new Vector3(0, direction, 0), speed));
-        else if (Input.GetKeyDown(KeyCode.E))
-            StartCoroutine(Rotate(EquatorCubelets, new Vector3(0, direction, 0), speed));        
-        else if (Input.GetKeyDown(KeyCode.D))
-            StartCoroutine(Rotate(DownCubelets, new Vector3(0, direction, 0), speed));
-        else if (Input.GetKeyDown(KeyCode.F))
-            StartCoroutine(Rotate(FrontCubelets, new Vector3(0, 0, direction), speed));
-        else if (Input.GetKeyDown(KeyCode.S))
-            StartCoroutine(Rotate(StandingCubelets, new Vector3(0, 0, direction), speed));
-        else if (Input.GetKeyDown(KeyCode.B))
-            StartCoroutine(Rotate(BackCubelets, new Vector3(0, 0, direction), speed));
-        else if (Input.GetKeyDown(KeyCode.L))
-            StartCoroutine(Rotate(LeftCubelets, new Vector3(direction, 0, 0), speed));
-        else if (Input.GetKeyDown(KeyCode.M))
-            StartCoroutine(Rotate(MiddleCubelets, new Vector3(direction, 0, 0), speed));
-        else if (Input.GetKeyDown(KeyCode.R))
-            StartCoroutine(Rotate(RightCubelets, new Vector3(direction, 0, 0), speed));
     }
 
     void MouseInput()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Vector3 origin = ray.origin;
 
         if (Input.GetMouseButtonDown(0))
         {
+            movableSlices.Clear();
+            movingSlice.Clear();
+            rotation = Vector3.zero;
             RaycastHit hit;
             if(Physics.Raycast(ray, out hit))
             {
                 if (hit.transform.name == "Cubelet(Clone)")
                     return;
-                selectedSide = hit.transform;
-                selectedCubelet = selectedSide.parent;
-                selectedSide.Rotate(selectedSide.rotation.eulerAngles);
-                Vector3 position = selectedSide.position + selectedCubelet.position;
-                if (Mathf.Abs(position.x) > 1.5)
+                Transform selectedSide = hit.transform;
+                Transform selectedCubelet = selectedSide.parent;
+                position = selectedCubelet.localRotation * selectedSide.localPosition + selectedCubelet.localPosition;
+                if (Mathf.Abs(position.x) >= 1.5)
                 {
                     movableSlices.Add(GetYSlice(selectedCubelet));
                     movableSlices.Add(GetZSlice(selectedCubelet));
                 }
-                if (Mathf.Abs(position.y) > 1.5)
+                if (Mathf.Abs(position.y) >= 1.5)
                 {
-                    movableSlices.Add(GetXSlice(selectedCubelet));
-                    movableSlices.Add(GetZSlice(selectedCubelet));
+                    if (origin.x > Mathf.Abs(origin.z) || origin.x < -Mathf.Abs(origin.z))
+                    {
+                        movableSlices.Add(GetXSlice(selectedCubelet));
+                        movableSlices.Add(GetZSlice(selectedCubelet));
+                    }
+                    else if (origin.z > Mathf.Abs(origin.x) || origin.z < -Mathf.Abs(origin.x))
+                    {
+                        movableSlices.Add(GetZSlice(selectedCubelet));
+                        movableSlices.Add(GetXSlice(selectedCubelet));
+                    }
                 }
-                if (Mathf.Abs(position.z) > 1.5)
+                if (Mathf.Abs(position.z) >= 1.5)
                 {
                     movableSlices.Add(GetYSlice(selectedCubelet));
                     movableSlices.Add(GetXSlice(selectedCubelet));
                 }
-                foreach (List<GameObject> slice in movableSlices)
-                    foreach (GameObject go in slice)
-                        go.GetComponent<Renderer>().material.color = Color.white;
             }
         }
         if (Input.GetMouseButton(0) && movableSlices.Count != 0)
         {
-            if (Mathf.Abs(Input.GetAxis("Mouse X")) > Mathf.Abs(Input.GetAxis("Mouse Y")))
+            Vector3 rotationVector = Vector3.zero;
+            Vector3 initialVector = rotationVector;
+            if (Mathf.Abs(Input.GetAxis("Mouse X")) > Mathf.Abs(Input.GetAxis("Mouse Y")) && Input.GetAxis("Mouse X") != 0)
             {
                 if (movingSlice.Count == 0)
                     movingSlice = movableSlices[0];
-                if (movingSlice == movableSlices[0])
+                if (movingSlice.All(movableSlices[0].Contains))
                 {
-
+                    if (Mathf.Abs(position.x) >= 1.5)
+                        rotationVector = new Vector3(0, -Input.GetAxis("Mouse X") * speed, 0);
+                    if (position.y >= 1.5)
+                    {
+                        if (origin.z > Mathf.Abs(origin.x))
+                            rotationVector = new Vector3(0, 0, Input.GetAxis("Mouse X") * speed);
+                        else if (origin.z < -Mathf.Abs(origin.x))
+                            rotationVector = new Vector3(0, 0, -Input.GetAxis("Mouse X") * speed);
+                        else if (origin.x > Mathf.Abs(origin.z))
+                            rotationVector = new Vector3(Input.GetAxis("Mouse X") * speed, 0, 0);
+                        else if (origin.x < -Mathf.Abs(origin.z))
+                            rotationVector = new Vector3(-Input.GetAxis("Mouse X") * speed, 0, 0);
+                    }
+                    else if (position.y <= -1.5)
+                    {
+                        if (origin.z > Mathf.Abs(origin.x))
+                            rotationVector = new Vector3(0, 0, -Input.GetAxis("Mouse X") * speed);
+                        else if (origin.z < -Mathf.Abs(origin.x))
+                            rotationVector = new Vector3(0, 0, Input.GetAxis("Mouse X") * speed);
+                        else if (origin.x > Mathf.Abs(origin.z))
+                            rotationVector = new Vector3(-Input.GetAxis("Mouse X") * speed, 0, 0);
+                        else if (origin.x < -Mathf.Abs(origin.z))
+                            rotationVector = new Vector3(Input.GetAxis("Mouse X") * speed, 0, 0);
+                    }
+                    if (Mathf.Abs(position.z) >= 1.5)
+                        rotationVector = new Vector3(0, -Input.GetAxis("Mouse X") * speed, 0);
                 }
             }
-            else if (Mathf.Abs(Input.GetAxis("Mouse X")) < Mathf.Abs(Input.GetAxis("Mouse Y")))
+            else if (Mathf.Abs(Input.GetAxis("Mouse X")) < Mathf.Abs(Input.GetAxis("Mouse Y")) && Input.GetAxis("Mouse Y") != 0)
             {
                 if (movingSlice.Count == 0)
                     movingSlice = movableSlices[1];
-                if (movingSlice == movableSlices[1])
+                if (movingSlice.All(movableSlices[1].Contains))
                 {
-
+                    if (position.x >= 1.5)
+                        rotationVector = new Vector3(0, 0, Input.GetAxis("Mouse Y") * speed);
+                    else if (position.x <= 1.5)
+                        rotationVector = new Vector3(0, 0, -Input.GetAxis("Mouse Y") * speed);
+                    if (Mathf.Abs(position.y) >= 1.5)
+                    {
+                        if (origin.z > Mathf.Abs(origin.x))
+                            rotationVector = new Vector3(-Input.GetAxis("Mouse Y") * speed, 0, 0);
+                        else if (origin.z < -Mathf.Abs(origin.x))
+                            rotationVector = new Vector3(Input.GetAxis("Mouse Y") * speed, 0, 0);
+                        else if (origin.x > Mathf.Abs(origin.z))
+                            rotationVector = new Vector3(0, 0, Input.GetAxis("Mouse Y") * speed);
+                        else if (origin.x < -Mathf.Abs(origin.z))
+                            rotationVector = new Vector3(0, 0, -Input.GetAxis("Mouse Y") * speed);
+                    }
+                    if (position.z >= 1.5)
+                        rotationVector = new Vector3(-Input.GetAxis("Mouse Y") * speed, 0, 0);
+                    else if (position.z <= -1.5)
+                        rotationVector = new Vector3(Input.GetAxis("Mouse Y") * speed, 0, 0);
                 }
             }
-            else
-                rotationVector = new Vector3(0, 0, 0);
+            if (!rotationVector.Equals(initialVector))
+                rotation = rotationVector;
             foreach (GameObject cubelet in movingSlice)
-                cubelet.transform.RotateAround(CenterCubelet.transform.position, rotationVector, speed);
+                cubelet.transform.RotateAround(Vector3.zero, rotationVector, speed);
         }
-        if (Input.GetMouseButtonUp(0))
+        if (Input.GetMouseButtonUp(0) && movingSlice.Count != 0)
         {
-            StartCoroutine(EndRotation());
-            movableSlices.Clear();
-            movingSlice.Clear();
-            foreach (GameObject cube in Cubelets)
-                cube.GetComponent<Renderer>().material.color = Color.black;
+            StartCoroutine(CompleteRotation(movingSlice, speed));
         }
     }
 
@@ -245,57 +222,100 @@ public class RubiksCube : MonoBehaviour
         return Cubelets.FindAll(x => Mathf.Round(x.transform.localPosition.z) == transform.localPosition.z);
     }
 
-    IEnumerator Shuffle()
-    {
-        int move, direction;
-        List<GameObject> moveCubelets = new List<GameObject>();
-        Vector3 rotationVector;
-
-        isShuffling = true;
-
-        for (int moveCount = Random.Range(15, 30); moveCount >= 0; moveCount--)
-        {
-            move = Random.Range(0, 9);
-
-            switch (move)
-            {
-                case 0: moveCubelets = UpCubelets; break;
-                case 1: moveCubelets = EquatorCubelets; break;
-                case 2: moveCubelets = DownCubelets; break;
-                case 3: moveCubelets = FrontCubelets; break;
-                case 4: moveCubelets = StandingCubelets; break;
-                case 5: moveCubelets = BackCubelets; break;
-                case 6: moveCubelets = LeftCubelets; break;
-                case 7: moveCubelets = MiddleCubelets; break;
-                case 8: moveCubelets = RightCubelets; break;
-            }
-
-            direction = Random.Range(0,2);
-            rotationVector = RotationVectors[move/3 + 3*direction];
-            StartCoroutine(Rotate(moveCubelets, rotationVector, 15));
-            yield return new WaitForSeconds(.15f);
-        }
-
-        isShuffling = false;
-    }
-    
-    IEnumerator Rotate(List<GameObject> cubelets, Vector3 rotationVector, int speed)
+    IEnumerator Rotate(List<GameObject> cubelets, Vector3 rotationVector, int angle, int speed)
     {
         isRotating = true;
-        int angle = 0;
-        
-        while (angle < 90)
+        while (angle > 0)
         {
             foreach (GameObject cubelet in cubelets)
-                cubelet.transform.RotateAround(CenterCubelet.transform.position, rotationVector, speed);
-            angle += speed;
+                cubelet.transform.RotateAround(Vector3.zero, rotationVector, (angle % speed == 0) ? speed : 1);
+            angle -= (angle % speed == 0) ? speed : 1;
             yield return null;
         }
         isRotating = false;
+        FixCube();
     }
 
-    IEnumerator EndRotation()
+    IEnumerator CompleteRotation(List<GameObject> cubelets, int speed)
     {
-        yield return null;
+        isRotating = true;
+        int angle = 0;
+        Vector3 rotationVector = Vector3.zero;
+        if (rotation.x != 0)
+        {
+            rotationVector = new Vector3(rotation.x > 0 ? 1 : -1, 0, 0);
+            while ((int)cubelets[0].transform.rotation.eulerAngles.x % 90 != 0)
+            {
+                foreach (GameObject cubelet in cubelets)
+                    cubelet.transform.RotateAround(Vector3.zero, rotationVector, ((int)cubelets[0].transform.rotation.eulerAngles.x % speed == 0) ? speed : 1);
+                yield return null;
+            }
+        }
+        else if (rotation.y != 0)
+        {
+            rotationVector = new Vector3(0, rotation.y > 0 ? 1 : -1, 0);
+            while ((int)cubelets[0].transform.rotation.eulerAngles.y % 90 != 0)
+            {
+                foreach (GameObject cubelet in cubelets)
+                    cubelet.transform.RotateAround(Vector3.zero, rotationVector, ((int)cubelets[0].transform.rotation.eulerAngles.y % speed == 0) ? speed : 1);
+                yield return null;
+            }
+        }
+        else if (rotation.z != 0)
+        {
+            rotationVector = new Vector3(0, 0, rotation.z > 0 ? 1 : -1);
+            while ((int)cubelets[0].transform.rotation.eulerAngles.z % 90 != 0)
+            {
+                foreach (GameObject cubelet in cubelets)
+                    cubelet.transform.RotateAround(Vector3.zero, rotationVector, ((int)cubelets[0].transform.rotation.eulerAngles.z % speed == 0) ? speed : 1);
+                yield return null;
+            }
+        }
+        isRotating = false;
+        FixCube();
+
+        //int angle = 0;
+        //Vector3 rotationVector = Vector3.zero;
+
+        //if (angle == 0 && cubelets[0].transform.localRotation.eulerAngles.x % 90 != 0)
+            //angle = (int)cubelets[0].transform.localRotation.eulerAngles.x % 90;
+        //if (angle == 0 && cubelets[0].transform.localRotation.eulerAngles.y % 90 != 0)
+            //angle = (int)cubelets[0].transform.localRotation.eulerAngles.y % 90;
+        //if (angle == 0 && cubelets[0].transform.localRotation.eulerAngles.z % 90 != 0)
+            //angle = (int)cubelets[0].transform.localRotation.eulerAngles.z % 90;
+        //if (rotation.x != 0)
+            //rotationVector = new Vector3(rotation.x > 0 ? 1 : -1, 0, 0);
+        //else if (rotation.y != 0)
+            //rotationVector = new Vector3(0, rotation.y > 0 ? 1 : -1, 0);
+        //else if (rotation.z != 0)
+            //rotationVector = new Vector3(0, 0, rotation.z > 0 ? 1 : -1);
+        //angle = angle <= 45 ? angle : 90 - angle;
+        //StartCoroutine(Rotate(cubelets, rotationVector, angle, speed));
+        //yield return null;
+    }
+
+    IEnumerator Shuffle()
+    {
+        isShuffling = true;
+        int axis, slice, direction;
+        List<GameObject> moveCubelets = new List<GameObject>();
+        Vector3 rotationVector;
+        for (int moveCount = Random.Range(15, 30); moveCount >= 0; moveCount--)
+        {
+            axis = Random.Range(0, 3);
+            slice = Random.Range(-1, 2);
+            if (axis == 0)
+                moveCubelets = Cubelets.FindAll(x => Mathf.Round(x.transform.localPosition.x) == slice);
+            else if (axis == 1)
+                moveCubelets = Cubelets.FindAll(x => Mathf.Round(x.transform.localPosition.y) == slice);
+            else
+                moveCubelets = Cubelets.FindAll(x => Mathf.Round(x.transform.localPosition.z) == slice);
+
+            direction = Random.Range(0,2);
+            rotationVector = RotationVectors[axis + 3 * direction];
+            StartCoroutine(Rotate(moveCubelets, rotationVector, 90, 15));
+            yield return new WaitForSeconds(.15f);
+        }
+        isShuffling = false;
     }
 }
