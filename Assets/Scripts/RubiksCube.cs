@@ -16,6 +16,8 @@ public class RubiksCube : MonoBehaviour
     
     bool isRotating = false;
     bool isShuffling = false;
+    bool movingX = false;
+    bool movingY = false;
     
     Vector3[] RotationVectors = 
     {
@@ -30,30 +32,35 @@ public class RubiksCube : MonoBehaviour
     
     void Update()
     {
-        if (!isRotating)
-        {
+        if (Application.platform == RuntimePlatform.Android)
+            if (Input.GetKeyDown(KeyCode.Escape))
+                Application.Quit();
+        if (!isRotating && !isShuffling)
             CheckInput();
-        }
     }
     
-    void CreateCube()
+    public void CreateCube()
     {
-        foreach (GameObject cubelet in Cubelets)
-            DestroyImmediate(cubelet);
+        if (!isRotating && !isShuffling && movableSlices.Count == 0)
+        {
+            foreach (GameObject cubelet in Cubelets)
+                DestroyImmediate(cubelet);
 
-        Cubelets.Clear();
-        movableSlices.Clear();
-        movingSlice.Clear();
+            Cubelets.Clear();
+            movableSlices.Clear();
+            movingSlice.Clear();
 
-        for (int x = -1; x <= 1; x++)
-            for (int y = -1; y <= 1; y++)
-                for (int z = -1; z <= 1; z++)
-                {
-                    GameObject cubelet = Instantiate(CubeletPrefab, transform, false);
-                    cubelet.transform.localPosition = new Vector3(-x, -y, z);
-                    cubelet.GetComponent<Cubelet>().SetColor(-x, -y, z);
-                    Cubelets.Add(cubelet);
-                }
+            for (int x = -1; x <= 1; x++)
+                for (int y = -1; y <= 1; y++)
+                    for (int z = -1; z <= 1; z++)
+                    {
+                        GameObject cubelet = Instantiate(CubeletPrefab, transform, false);
+                        cubelet.transform.localPosition = new Vector3(-x, -y, z);
+                        cubelet.GetComponent<Cubelet>().SetColor(-x, -y, z);
+                        Cubelets.Add(cubelet);
+                    }
+
+        }
     }
 
     void FixCube()
@@ -70,7 +77,7 @@ public class RubiksCube : MonoBehaviour
                     Round((int)cubelet.transform.localRotation.eulerAngles.z));
         }
     }
-    
+
     int Round(int angle)
     {
         if (angle % 90 > 45)
@@ -89,6 +96,7 @@ public class RubiksCube : MonoBehaviour
             movableSlices.Clear();
             movingSlice.Clear();
             rotation = Vector3.zero;
+            position = Vector3.zero;
             RaycastHit hit;
             if(Physics.Raycast(ray, out hit))
             {
@@ -181,7 +189,7 @@ public class RubiksCube : MonoBehaviour
                         else if (origin.x < -Mathf.Abs(origin.z))
                             rotationVector = new Vector3(0, 0, -Input.GetAxis("Mouse Y") * speed);
                     }
-                    if (position.z >= 1.5)
+                   if (position.z >= 1.5)
                         rotationVector = new Vector3(-Input.GetAxis("Mouse Y") * speed, 0, 0);
                     else if (position.z <= -1.5)
                         rotationVector = new Vector3(Input.GetAxis("Mouse Y") * speed, 0, 0);
@@ -277,7 +285,13 @@ public class RubiksCube : MonoBehaviour
         FixCube();
     }
 
-    IEnumerator Shuffle()
+    public void Shuffle()
+    {
+        if (!isRotating && !isShuffling && movableSlices.Count == 0)
+            StartCoroutine(ShuffleRoutine());
+    }
+
+    IEnumerator ShuffleRoutine()
     {
         isShuffling = true;
         int axis, slice, direction;

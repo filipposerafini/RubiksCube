@@ -40,6 +40,8 @@ public class CameraMovement : MonoBehaviour
                 default: break;
             }
         }
+        if (x % 45 == 0)
+            x += 1;
         Quaternion rotation = Quaternion.Euler(0, x, y);
         transform.parent.rotation = Quaternion.Lerp(transform.parent.rotation, rotation, Time.deltaTime * speed);
     }
