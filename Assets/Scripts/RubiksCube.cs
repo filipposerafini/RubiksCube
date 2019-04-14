@@ -32,8 +32,7 @@ public class RubiksCube : MonoBehaviour
     {
         if (!isRotating)
         {
-            KeyboardInput();
-            MouseInput();
+            CheckInput();
         }
     }
     
@@ -80,15 +79,7 @@ public class RubiksCube : MonoBehaviour
             return angle - angle % 90;
     }
 
-    void KeyboardInput()
-    {
-        if (Input.GetKeyDown(KeyCode.Return) && !isShuffling)
-            StartCoroutine(Shuffle());
-        else if (Input.GetKeyDown(KeyCode.Escape) && !isShuffling)
-            CreateCube();
-    }
-
-    void MouseInput()
+    void CheckInput()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         Vector3 origin = ray.origin;
@@ -203,7 +194,23 @@ public class RubiksCube : MonoBehaviour
         }
         if (Input.GetMouseButtonUp(0) && movingSlice.Count != 0)
         {
-            StartCoroutine(CompleteRotation(movingSlice, speed));
+            int angle = 0;
+            Vector3 rotationVector = Vector3.zero;
+
+            if ((int)movingSlice[0].transform.localRotation.eulerAngles.x % 90 != 0)
+                angle = (int)movingSlice[0].transform.localRotation.eulerAngles.x % 90;
+            else if ((int)movingSlice[0].transform.localRotation.eulerAngles.y % 90 != 0)
+                angle = (int)movingSlice[0].transform.localRotation.eulerAngles.y % 90;
+            else if ((int)movingSlice[0].transform.localRotation.eulerAngles.z % 90 != 0)
+                angle = (int)movingSlice[0].transform.localRotation.eulerAngles.z % 90;
+
+            if (rotation.x != 0)
+                rotationVector = new Vector3(angle > 45 ? 1 : -1, 0, 0);
+            else if (rotation.y != 0)
+                rotationVector = new Vector3(0, angle > 45 ? 1 : -1, 0);
+            else if (rotation.z != 0)
+                rotationVector = new Vector3(0, 0, angle > 45 ? 1 : -1);
+            StartCoroutine(CompleteRotation(movingSlice, rotationVector, speed));
         }
     }
 
@@ -236,62 +243,38 @@ public class RubiksCube : MonoBehaviour
         FixCube();
     }
 
-    IEnumerator CompleteRotation(List<GameObject> cubelets, int speed)
+    IEnumerator CompleteRotation(List<GameObject> cubelets, Vector3 rotationVector, int speed)
     {
         isRotating = true;
-        int angle = 0;
-        Vector3 rotationVector = Vector3.zero;
-        if (rotation.x != 0)
+        if ((int)cubelets[0].transform.localRotation.eulerAngles.x % 90 != 0)
         {
-            rotationVector = new Vector3(rotation.x > 0 ? 1 : -1, 0, 0);
-            while ((int)cubelets[0].transform.rotation.eulerAngles.x % 90 != 0)
+            while ((int)cubelets[0].transform.localRotation.eulerAngles.x % 90 != 0)
             {
                 foreach (GameObject cubelet in cubelets)
-                    cubelet.transform.RotateAround(Vector3.zero, rotationVector, ((int)cubelets[0].transform.rotation.eulerAngles.x % speed == 0) ? speed : 1);
+                    cubelet.transform.RotateAround(Vector3.zero, rotationVector, ((int)cubelets[0].transform.localRotation.eulerAngles.x % speed == 0) ? speed : 1);
                 yield return null;
             }
         }
-        else if (rotation.y != 0)
+        else if ((int)cubelets[0].transform.localRotation.eulerAngles.y % 90 != 0)
         {
-            rotationVector = new Vector3(0, rotation.y > 0 ? 1 : -1, 0);
-            while ((int)cubelets[0].transform.rotation.eulerAngles.y % 90 != 0)
+            while ((int)cubelets[0].transform.localRotation.eulerAngles.y % 90 != 0)
             {
                 foreach (GameObject cubelet in cubelets)
-                    cubelet.transform.RotateAround(Vector3.zero, rotationVector, ((int)cubelets[0].transform.rotation.eulerAngles.y % speed == 0) ? speed : 1);
+                    cubelet.transform.RotateAround(Vector3.zero, rotationVector, ((int)cubelets[0].transform.localRotation.eulerAngles.y % speed == 0) ? speed : 1);
                 yield return null;
             }
         }
-        else if (rotation.z != 0)
+        else if ((int)cubelets[0].transform.localRotation.eulerAngles.z % 90 != 0)
         {
-            rotationVector = new Vector3(0, 0, rotation.z > 0 ? 1 : -1);
-            while ((int)cubelets[0].transform.rotation.eulerAngles.z % 90 != 0)
+            while ((int)cubelets[0].transform.localRotation.eulerAngles.z % 90 != 0)
             {
                 foreach (GameObject cubelet in cubelets)
-                    cubelet.transform.RotateAround(Vector3.zero, rotationVector, ((int)cubelets[0].transform.rotation.eulerAngles.z % speed == 0) ? speed : 1);
+                    cubelet.transform.RotateAround(Vector3.zero, rotationVector, ((int)cubelets[0].transform.localRotation.eulerAngles.z % speed == 0) ? speed : 1);
                 yield return null;
             }
         }
         isRotating = false;
         FixCube();
-
-        //int angle = 0;
-        //Vector3 rotationVector = Vector3.zero;
-
-        //if (angle == 0 && cubelets[0].transform.localRotation.eulerAngles.x % 90 != 0)
-            //angle = (int)cubelets[0].transform.localRotation.eulerAngles.x % 90;
-        //if (angle == 0 && cubelets[0].transform.localRotation.eulerAngles.y % 90 != 0)
-            //angle = (int)cubelets[0].transform.localRotation.eulerAngles.y % 90;
-        //if (angle == 0 && cubelets[0].transform.localRotation.eulerAngles.z % 90 != 0)
-            //angle = (int)cubelets[0].transform.localRotation.eulerAngles.z % 90;
-        //if (rotation.x != 0)
-            //rotationVector = new Vector3(rotation.x > 0 ? 1 : -1, 0, 0);
-        //else if (rotation.y != 0)
-            //rotationVector = new Vector3(0, rotation.y > 0 ? 1 : -1, 0);
-        //else if (rotation.z != 0)
-            //rotationVector = new Vector3(0, 0, rotation.z > 0 ? 1 : -1);
-        //angle = angle <= 45 ? angle : 90 - angle;
-        //StartCoroutine(Rotate(cubelets, rotationVector, angle, speed));
-        //yield return null;
     }
 
     IEnumerator Shuffle()

@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/Rubik's Cube.unity
+    guid: 5c58a80f2e2455ed59adf4fe0da08cce
   m_configObjects: {}
