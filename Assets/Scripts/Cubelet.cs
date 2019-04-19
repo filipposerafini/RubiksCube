@@ -4,23 +4,23 @@ using UnityEngine;
 
 public class Cubelet : MonoBehaviour
 {
-    public GameObject UpPlane, DownPlane, FrontPlane, BackPlane, LeftPlane, RightPlane;
+    public List<GameObject> Planes = new List<GameObject>();
 
     public void SetColor(int x, int y, int z)
     {
         if (y == 1)
-            UpPlane.SetActive(true);
+            Planes[0].SetActive(true);
         else if (y == -1)
-            DownPlane.SetActive(true);
+            Planes[1].SetActive(true);
             
         if (x == 1)
-            FrontPlane.SetActive(true);
+            Planes[2].SetActive(true);
         else if (x == -1)
-            BackPlane.SetActive(true);
+            Planes[3].SetActive(true);
             
         if (z == -1)
-            LeftPlane.SetActive(true);
+            Planes[4].SetActive(true);
         else if (z == 1)
-            RightPlane.SetActive(true);  
+            Planes[5].SetActive(true);  
     }
 }

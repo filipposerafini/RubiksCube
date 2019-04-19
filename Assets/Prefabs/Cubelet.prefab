@@ -110,14 +110,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fcd371b826df04cb495035b5edeb5e6d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  defaultColor: {r: 0, g: 0, b: 0, a: 0}
-  hoverColor: {r: 1, g: 1, b: 1, a: 0}
-  UpPlane: {fileID: 7128112678771312253}
-  DownPlane: {fileID: 4224190141730601721}
-  FrontPlane: {fileID: 2129124609181894774}
-  BackPlane: {fileID: 5995197403807810467}
-  LeftPlane: {fileID: 948120788752889694}
-  RightPlane: {fileID: 8818644063651399563}
+  Planes:
+  - {fileID: 7128112678771312253}
+  - {fileID: 4224190141730601721}
+  - {fileID: 2129124609181894774}
+  - {fileID: 5995197403807810467}
+  - {fileID: 948120788752889694}
+  - {fileID: 8818644063651399563}
 --- !u!1 &948120788752889694
 GameObject:
   m_ObjectHideFlags: 0
