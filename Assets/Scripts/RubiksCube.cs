@@ -146,7 +146,6 @@ public class RubiksCube : MonoBehaviour
                     Round((int)cubelet.transform.localRotation.eulerAngles.y),
                     Round((int)cubelet.transform.localRotation.eulerAngles.z));
         }
-        isNew = false;
     }
 
     int Round(int angle)
